@@ -50,6 +50,7 @@ static const CGFloat kLabelsFontSize = 12.0f;
 //do all the setup in a common place, as there can be two initialisers called depending on if storyboards or code are used. The designated initialiser isn't always called :|
 - (void)initialiseControl {
     //defaults:
+    self.rangeBuffer = 0.0;
     _minValue = 0;
     _selectedMinimum = 10;
     _maxValue = 100;
@@ -429,21 +430,21 @@ static const CGFloat kLabelsFontSize = 12.0f;
 
     if (self.leftHandleSelected)
     {
-        if (selectedValue < self.selectedMaximum){
+        if (selectedValue < self.selectedMaximum - self.rangeBuffer){
             self.selectedMinimum = selectedValue;
         }
         else {
-            self.selectedMinimum = self.selectedMaximum;
+            self.selectedMinimum = self.selectedMaximum - self.rangeBuffer;
         }
 
     }
     else if (self.rightHandleSelected)
     {
-        if (selectedValue > self.selectedMinimum || (self.disableRange && selectedValue >= self.minValue)){ //don't let the dots cross over, (unless range is disabled, in which case just dont let the dot fall off the end of the screen)
+        if (selectedValue > self.selectedMinimum + self.rangeBuffer || (self.disableRange && selectedValue >= self.minValue)){ //don't let the dots cross over, (unless range is disabled, in which case just dont let the dot fall off the end of the screen)
             self.selectedMaximum = selectedValue;
         }
         else {
-            self.selectedMaximum = self.selectedMinimum;
+            self.selectedMaximum = self.selectedMinimum + self.rangeBuffer;
         }
     }
 
