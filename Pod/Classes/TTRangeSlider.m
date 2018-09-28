@@ -11,7 +11,10 @@ const float TEXT_HEIGHT = 14;
 @interface TTRangeSlider ()
 
 @property (nonatomic, strong) CALayer *sliderLine;
-@property (nonatomic, strong) CALayer *sliderLineBetweenHandles;
+@property (nonatomic, strong) CALayer *sliderLineBottom;
+//@property (nonatomic, strong) CALayer *sliderLineBetweenHandles;
+@property (nonatomic, strong) CALayer *sliderLeftMask;
+@property (nonatomic, strong) CALayer *sliderRightMask;
 
 @property (nonatomic, strong) CALayer *leftHandle;
 @property (nonatomic, assign) BOOL leftHandleSelected;
@@ -44,6 +47,7 @@ const float TEXT_HEIGHT = 14;
 @end
 
 static const CGFloat kLabelsFontSize = 12.0f;
+static const CGFloat kHorizontalPadding = 16.0f;
 
 @implementation TTRangeSlider
 
@@ -81,16 +85,34 @@ static const CGFloat kLabelsFontSize = 12.0f;
     self.sliderLine.backgroundColor = self.tintColor.CGColor;
     self.sliderLine.borderColor = self.lineBorderColor.CGColor;
     self.sliderLine.borderWidth = self.lineBorderWidth;
-    [self.layer addSublayer:self.sliderLine];
+    //[self.layer addSublayer:self.sliderLine];
+    
+    self.sliderLineBottom = [CALayer layer];
+    //self.sliderLineBottom.backgroundColor = self.tintColor.CGColor;
+    self.sliderLineBottom.borderColor = self.tintColor.CGColor;
+    self.sliderLineBottom.borderWidth = 1.0;//self.lineBorderWidth;
+    [self.layer addSublayer:self.sliderLineBottom];
     
     //draw the track distline
-    self.sliderLineBetweenHandles = [CALayer layer];
-    self.sliderLineBetweenHandles.backgroundColor = self.tintColor.CGColor;
-    [self.layer addSublayer:self.sliderLineBetweenHandles];
+//    self.sliderLineBetweenHandles = [CALayer layer];
+//    self.sliderLineBetweenHandles.backgroundColor = UIColor.whiteColor.CGColor;
+//    self.sliderLineBetweenHandles.opacity = 0.5;
+    //[self.layer addSublayer:self.sliderLineBetweenHandles];
+    
+    self.sliderLeftMask = [CALayer layer];
+    self.sliderLeftMask.backgroundColor = UIColor.whiteColor.CGColor;
+    self.sliderLeftMask.opacity = 0.7;
+    [self.layer addSublayer:self.sliderLeftMask];
+    
+    self.sliderRightMask = [CALayer layer];
+    self.sliderRightMask.backgroundColor = UIColor.whiteColor.CGColor;
+    self.sliderRightMask.opacity = 0.7;
+    [self.layer addSublayer:self.sliderRightMask];
+    
 
     //draw the minimum slider handle
     self.leftHandle = [CALayer layer];
-    self.leftHandle.cornerRadius = self.handleDiameter / 2;
+    self.leftHandle.cornerRadius = 3;
     self.leftHandle.backgroundColor = self.tintColor.CGColor;
     self.leftHandle.borderWidth = self.handleBorderWidth;
     self.leftHandle.borderColor = self.handleBorderColor.CGColor;
@@ -98,14 +120,14 @@ static const CGFloat kLabelsFontSize = 12.0f;
 
     //draw the maximum slider handle
     self.rightHandle = [CALayer layer];
-    self.rightHandle.cornerRadius = self.handleDiameter / 2;
+    self.rightHandle.cornerRadius = 3;
     self.rightHandle.backgroundColor = self.tintColor.CGColor;
     self.rightHandle.borderWidth = self.handleBorderWidth;
     self.rightHandle.borderColor = self.handleBorderColor.CGColor;
     [self.layer addSublayer:self.rightHandle];
 
-    self.leftHandle.frame = CGRectMake(0, 0, self.handleDiameter, self.handleDiameter);
-    self.rightHandle.frame = CGRectMake(0, 0, self.handleDiameter, self.handleDiameter);
+    self.leftHandle.frame = CGRectMake(0, 0, 4, 60);
+    self.rightHandle.frame = CGRectMake(0, 0, 4, 60);
 
     //draw the text labels
     self.minLabel = [[CATextLayer alloc] init];
@@ -159,14 +181,17 @@ static const CGFloat kLabelsFontSize = 12.0f;
     [super layoutSubviews];
 
     //positioning for the slider line
-    float barSidePadding = 16.0f;
     CGRect currentFrame = self.frame;
     float yMiddle = currentFrame.size.height/2.0;
-    CGPoint lineLeftSide = CGPointMake(barSidePadding, yMiddle);
-    CGPoint lineRightSide = CGPointMake(currentFrame.size.width-barSidePadding, yMiddle);
-    self.sliderLine.frame = CGRectMake(lineLeftSide.x, lineLeftSide.y, lineRightSide.x-lineLeftSide.x, self.lineHeight);
+    CGPoint lineLeftSide = CGPointMake(kHorizontalPadding, yMiddle);
+    CGPoint lineRightSide = CGPointMake(currentFrame.size.width- kHorizontalPadding , yMiddle);
+    self.sliderLine.frame = CGRectMake(lineLeftSide.x, 0, lineRightSide.x-lineLeftSide.x, self.lineHeight);
     
     self.sliderLine.cornerRadius = self.lineHeight / 2.0;
+    
+    self.sliderLineBottom.frame = CGRectMake(lineLeftSide.x - 1, 0, lineRightSide.x-lineLeftSide.x+2, currentFrame.size.height);
+    self.sliderLineBottom.cornerRadius = 0;
+    
 
     [self updateLabelValues];
     [self updateHandlePositions];
@@ -200,11 +225,12 @@ static const CGFloat kLabelsFontSize = 12.0f;
     return CGSizeMake(UIViewNoIntrinsicMetric, 65);
 }
 
--(void)prepareForInterfaceBuilder{
-    if (self.tintColorBetweenHandles == nil){
-        self.sliderLineBetweenHandles.backgroundColor = self.tintColor.CGColor;
-    }
-}
+//-(void)prepareForInterfaceBuilder{
+//    if (self.tintColorBetweenHandles == nil){
+//        self.sliderLineBetweenHandles.backgroundColor = UIColor.whiteColor.CGColor;
+//        self.sliderLineBetweenHandles.opacity = 0.5;
+//    }
+//}
 
 
 - (void)tintColorDidChange {
@@ -280,14 +306,26 @@ static const CGFloat kLabelsFontSize = 12.0f;
 
 #pragma mark - Set Positions
 - (void)updateHandlePositions {
-    CGPoint leftHandleCenter = CGPointMake([self getXPositionAlongLineForValue:self.selectedMinimum], CGRectGetMidY(self.sliderLine.frame));
+    CGPoint leftHandleCenter = CGPointMake([self getXPositionAlongLineForValue:self.selectedMinimum], 30);
     self.leftHandle.position = leftHandleCenter;
-
-    CGPoint rightHandleCenter = CGPointMake([self getXPositionAlongLineForValue:self.selectedMaximum], CGRectGetMidY(self.sliderLine.frame));
+    
+    CGPoint rightHandleCenter = CGPointMake([self getXPositionAlongLineForValue:self.selectedMaximum], 30);
     self.rightHandle.position= rightHandleCenter;
     
+    
+//    CGPoint leftHandleCenter = CGPointMake([self getXPositionAlongLineForValue:self.selectedMinimum], self.leftHandle.frame.size.height);
+//    self.leftHandle.position = leftHandleCenter;
+//
+//    CGPoint rightHandleCenter = CGPointMake([self getXPositionAlongLineForValue:self.selectedMaximum], self.rightHandle.frame.size.height);
+//    self.rightHandle.position= rightHandleCenter;
+    
     //positioning for the dist slider line
-    self.sliderLineBetweenHandles.frame = CGRectMake(self.leftHandle.position.x, self.sliderLine.frame.origin.y, self.rightHandle.position.x-self.leftHandle.position.x, self.lineHeight);
+    //self.sliderLineBetweenHandles.frame =  CGRectMake(self.leftHandle.position.x, 0, self.rightHandle.position.x-self.leftHandle.position.x, self.frame.size.height);
+    
+    self.sliderLeftMask.frame = CGRectMake(kHorizontalPadding, 0, self.leftHandle.position.x - kHorizontalPadding, self.frame.size.height);
+    
+    self.sliderRightMask.frame = CGRectMake(self.rightHandle.position.x, 0, self.frame.size.width - self.rightHandle.position.x - kHorizontalPadding, self.frame.size.height);
+    
 }
 
 - (void)updateLabelPositions {
@@ -345,15 +383,15 @@ static const CGFloat kLabelsFontSize = 12.0f;
 
         if (distanceFromLeftHandle < distanceFromRightHandle && self.disableRange == NO){
             self.leftHandleSelected = YES;
-            [self animateHandle:self.leftHandle withSelection:YES];
+            //[self animateHandle:self.leftHandle withSelection:YES];
         } else {
             if (self.selectedMaximum == self.maxValue && [self getCentreOfRect:self.leftHandle.frame].x == [self getCentreOfRect:self.rightHandle.frame].x) {
                 self.leftHandleSelected = YES;
-                [self animateHandle:self.leftHandle withSelection:YES];
+                //[self animateHandle:self.leftHandle withSelection:YES];
             }
             else {
                 self.rightHandleSelected = YES;
-                [self animateHandle:self.rightHandle withSelection:YES];
+                //[self animateHandle:self.rightHandle withSelection:YES];
             }
         }
 
@@ -647,10 +685,11 @@ static const CGFloat kLabelsFontSize = 12.0f;
 
 }
 
--(void)setTintColorBetweenHandles:(UIColor *)tintColorBetweenHandles{
-    _tintColorBetweenHandles = tintColorBetweenHandles;
-    self.sliderLineBetweenHandles.backgroundColor = [tintColorBetweenHandles CGColor];
-}
+//-(void)setTintColorBetweenHandles:(UIColor *)tintColorBetweenHandles{
+//    _tintColorBetweenHandles = tintColorBetweenHandles;
+//    self.sliderLineBetweenHandles.backgroundColor = UIColor.whiteColor.CGColor;
+//    self.sliderLineBetweenHandles.opacity = 0.5;
+//}
 
 -(void)setLineHeight:(CGFloat)lineHeight{
     _lineHeight = lineHeight;
